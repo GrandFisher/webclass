@@ -7,7 +7,7 @@
         </div>
         <div>
           <span v-if="!isBook">用户<input type="text" v-model="user"/></span>
-          <span><button>搜索</button></span>
+          <span><el-button>搜索</el-button></span>
         </div>
         <div v-if="isBook">
           <table>

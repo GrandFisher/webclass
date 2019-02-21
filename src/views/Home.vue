@@ -1,15 +1,19 @@
 <template>
-  <div class="home">
+  <el-container class="home">
     <!--<img alt="Vue logo" src="../assets/logo.png">-->
     <!--<HelloWorld msg="Welcome to Your Vue.js App"/>-->
-    <NavBar/>
-    <router-view/>
-  </div>
+    <el-header>
+      <NavBar/>
+    </el-header>
+    <el-aside></el-aside>
+    <el-main>
+      <router-view/>
+    </el-main>
+    <el-aside></el-aside>
+  </el-container>
 </template>
 
 <script>
-// @ is an alias to /src
-// import HelloWorld from '@/components/HelloWorld.vue'
 import NavBar from '@/views/NavBar'
 import store from '@/store.js'
 export default {
@@ -26,3 +30,9 @@ export default {
 
 }
 </script>
+<style scoped>
+  .el-header{
+    margin: auto;
+    width: 80%;
+  }
+</style>
