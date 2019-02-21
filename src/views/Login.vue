@@ -77,24 +77,25 @@ export default {
   },
   watch: {
     userName: function () {
-      $(function () {
-        alert("haha")
+      var result
+      $.post('', { 'userName': this.userName }).done(function (data) {
+        // checkForm(
+        this.userName = data
+      }).fail(function (e) {
+
       })
-      this.checkForm()
-      // checkName 检查名字是否合法，如果合法则根据是否为admin结果来更新
-      // admin: function (val) {
-      //   this.$http.get('', { 'username': val }).then((res)=>function () {
-      //     res.data.result
-      //   })
-      // }
-      // '当用户名发生变化时自动变换,可以设置限制频率'
     }
+
+    // checkName 检查名字是否合法，如果合法则根据是否为admin结果来更新
+    // admin: function (val) {
+    //   this.$http.get('', { 'username': val }).then((res)=>function () {
+    //     res.data.result
+    //   })
+    // }
+    // '当用户名发生变化时自动变换,可以设置限制频率'
     // 每次在这更新userObject，顺便显示是不是用户名重复了
   },
   methods: {
-    submitForm () {
-
-    },
     checkForm () {
       if (this.nameValid === true) {
 
