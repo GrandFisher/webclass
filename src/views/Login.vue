@@ -1,12 +1,13 @@
 <template>
+  <el-dialog title="登录/注册" :visible.sync="dialogFormVisible">
   <el-form v-if="!isReg" :class="{'admin':admin}"
           :model="formData" :rules="rules"
           ref="formData" label-width="130px">
-          <el-form-item class="userName" prop="loginName" label="用户名：">
-            <el-input type="text" v-model="formData.userName" required="required"/>
+          <el-form-item class="userName" prop="loginName" label="用户名：" key="userLogin">
+            <el-input type="text" v-model="formData.loginName" required="required"/>
           </el-form-item>
-          <el-form-item class="userPasswd" prop="loginPasswd" label="密码：">
-            <el-input type="password" v-model="formData.userPasswd" required/>
+          <el-form-item class="userPasswd" prop="loginPasswd" label="密码：" key="loginPasswd">
+            <el-input type="password" v-model="formData.loginPasswd" required/>
           </el-form-item>
           <el-form-item>
             <el-button type="submit" @click="login">登录</el-button>
@@ -16,10 +17,10 @@
         <el-form v-else
           :model="formData" :rules="rules"
           label-width="130px" ref="formData">
-          <el-form-item class="userName" prop="userName" label="用户名：">
+          <el-form-item class="userName" prop="userName" label="用户名：" key="regName">
             <el-input type="text" v-model="formData.userName" />
           </el-form-item>
-          <el-form-item class="userPasswd" prop="userPasswd" label="密码：">
+          <el-form-item class="userPasswd" prop="userPasswd" label="密码：" key="regPasswd">
             <el-input type="password" v-model="formData.userPasswd"/>
           </el-form-item>
           <el-form-item class="repeatPasswd" prop="repeatPasswd" label="请再次输入密码：">
@@ -41,6 +42,7 @@
             <el-button type="button" @click="reg">返回</el-button>
           </el-form-item>
         </el-form>
+  </el-dialog>
 </template>
 
 <script>
@@ -69,13 +71,16 @@ export default {
       }
     }
     return {
-      isReg: true,
+      dialogFormVisible: true,
+      isReg: false,
       admin: false,
       isIndeterminate: false,
       checkAll: false,
       checkedHobbies: [],
       hobbies: ['编程', '读书', '音乐', '写作'],
       formData: {
+        loginName: '',
+        loginPasswd: '',
         userName: '',
         // nameInfo: '',
         // nameValid: '',
@@ -121,24 +126,6 @@ export default {
     }
   },
   watch: {
-    // userName: function () {
-    //   var result
-    //   $.post('', { 'userName': this.userName }).done(function (data) {
-    //     // checkForm(
-    //     this.userName = data
-    //   }).fail(function (e) {
-    //
-    //   })
-    // }
-
-    // checkName 检查名字是否合法，如果合法则根据是否为admin结果来更新
-    // admin: function (val) {
-    //   this.$http.get('', { 'username': val }).then((res)=>function () {
-    //     res.data.result
-    //   })
-    // }
-    // '当用户名发生变化时自动变换,可以设置限制频率'
-    // 每次在这更新userObject，顺便显示是不是用户名重复了
   },
   methods: {
     handleCheckAllChange (val) {
@@ -166,105 +153,114 @@ export default {
       // this.
     },
     login: function () {
+      var datatemp1={
+        "username": this.formData.loginName,
+        "password": this.formData.loginPasswd
+      }
+      var tempname=this.formData.loginName
       if (!this.checkForm()) {
         event.preventDefault()
         // this.$message.error('登录出错，请检查输入')
       } else {
         $.ajax({
-          url: 'http://*******/api/xxx',
-          data: {
-            'role': 0,
-            'disabled': true,
-            'account': this.userName,
-            'password': this.userPasswd,
-            'email': this.userEmail,
-            'hobbies': [1, 2, 3, 4]
-          },
-          // beforeSend: function (request) {
-          //   request.setRequestHeader('Authorization', token)
-          // },
+          url: store.state.urlprefix + '/user/login',
+          data: JSON.stringify(datatemp1),
+          contentType: "application/x-www-form-urlencoded",
           dataType: 'JSON',
           async: false, // 请求是否异步，默认为异步
           type: 'POST',
-          success: function (list) {
-          },
-          error: function () {
-          }
-        }).done().fail()
+        }).done((e)=>{
+            this.$refs['formData'].resetFields()
+            this.$message({
+              showClose: true,
+              message: e.msg,
+              type: 'success'
+            })
+            store.dispatch('setToken',store.state.tokenprefix+ e.data)
+
+          $.ajax({
+            url: store.state.urlprefix + '/user/info/' + tempname,
+            headers:{'Authorization': store.state.token },
+            contentType: "application/json; charset=utf-8",
+            async: false, // 请求是否异步，默认为异步
+            type: 'POST',
+          }).done((e)=>{
+
+            store.dispatch('setAdmin',e.data.role)
+            store.dispatch('setUser',e.data)
+            this.$router.push({path:'/booklist'})
+
+          }).fail((data)=>{
+            this.$message({
+              showClose: true,
+              message: '请求失败，' + '意外事件，本次演示到此结束',
+              type: 'error'
+            })
+          })
+
+        }).fail((e)=>{
+            this.$message({
+              showClose: true,
+              message: "登录失败",
+              type: 'error'
+            })
+        })
       }
 
-      // if (localStorage.getItem('userName') === this.userName && localStorage.getItem('userPasswd') === this.userPasswd) {
-      //   this.userPasswd = ''
-      //   // @Todo 进行权限验证
-      //   // if (localStorage.getItem('Auth') === 'off') {
-      //   //   alert('账户已被禁用')
-      //   //   return
-      //   // }
-      //
-      //   store.commit('setUser',
-      //     localStorage.getItem('userName')
-      //   )
-      //   event.preventDefault()
-      //   this.$router.push('/home')
-      // }
     },
     reg: function () {
       // this.$router.push('/home')
+      this.$refs['formData'].resetFields()
       this.isReg = !this.isReg
     },
     addUser: function () {
       if (!this.checkForm()) {
         event.preventDefault()
-      } else {
-        $.ajax({
-          url: 'http://*******/api/xxx',
-          data: {
-            'role': 0,
-            'disabled': true,
-            'account': this.userName,
-            'password': this.userPasswd,
-            'email': this.userEmail,
-            'hobbies': [1, 2, 3, 4]
-          },
-          // beforeSend: function (request) {
-          //   request.setRequestHeader('Authorization', token)
-          // },
-          dataType: 'JSON',
-          async: false, // 请求是否异步，默认为异步
-          type: 'POST',
-          success: function (list) {
-          },
-          error: function () {
-          }
-        }).done().fail()
+        return
       }
-      // this.formData.validate((valid) => {
-      //   if (valid) {
-      //     alert('注册成功')
-      //   } else {
-      //     alert('注册失败')
-      //   }
-      // })
-      // if (this.userPasswd === this.repeatPasswd) {
-      //   localStorage.setItem('userName', this.userName)
-      //   localStorage.setItem('userPasswd', this.userPasswd)
-      //   this.userName = ''
-      //   this.repeatPasswd = ''
-      //   this.userPasswd = ''
-      //   this.isReg = false
-      // } else {
-      //   this.userPasswd = ''
-      //   this.repeatPasswd = ''
-      //   alert('两次输入密码不一致')
-      // }
+      console.log("调用ajax注册")
+      var datatemp = {
+        "role": 0,
+        'disabled': false,
+        'account': this.formData.userName,
+        'password': this.formData.userPasswd,
+        'email': this.formData.userEmail,
+        'hobbies': [1, 2, 3, 4]
+      }
+      $.ajax({
+        url: store.state.urlprefix + '/user/register',
+        data: JSON.stringify(datatemp),
+        contentType: "application/json; charset=utf-8",
+        dataType: 'JSON',
+        async: false, // 请求是否异步，默认为异步
+        type: 'POST'
+      }).done((e)=>{
+        this.$message({
+          showClose: true,
+          message: '注册成功',
+          type: 'success'
+        })
+        this.$refs['formData'].resetFields()
+        this.isReg = false
+      }).fail((e) =>{
+        this.$message({
+          showClose: true,
+          message: '注册失败',
+          type: 'error'
+        })
+      })
     }
   }
 }
 </script>
 
 <style scoped>
-  .el-input{
-    width: 200px;
+  .el-form{
+    width: 50%;
+    margin: auto;
+  }
+  el-input{
+    margin-left: 20px;
   }
   label{
     display: inline-block;

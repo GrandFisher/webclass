@@ -1,119 +1,200 @@
 <template>
   <div>
-    <div>
-      <span>起始日期<input type="date" v-model="startTime"/></span>
-      <span>结束日期<input type="date" v-model="endTime"/></span>
-      <span>书名<input type="text" v-model="search" /><button type="button">搜索</button></span>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th><div>封面</div></th>
-          <th><div>书籍</div></th>
-          <th><div>作者</div></th>
-          <th><div>单价</div></th>
-          <th><div>数量</div></th>
-          <th><div>花费</div></th>
-        </tr>
-        <!--<tr><th><div>总价</div></th></tr>-->
-      </thead>
-      <tbody v-for="(order,index) in orderList" :key="index">
-        <tr>
-          <th><div>{{order.orderId}}</div></th>
-          <th><div>{{order.orderTime}}</div></th>
-        </tr>
-        <tr v-for="(book,ind) in order.books" :key="ind">
-          <td><div>{{book.bookCover}}</div></td>
-          <td><div>{{book.bookName}}</div></td>
-          <td><div>{{book.bookAuthor}}</div></td>
-          <td><div>{{book.bookPrice}}</div></td>
-          <td><div>{{book.bookNum}}</div></td>
-          <td><div>{{book.bookNum * book.bookPrice}}</div></td>
-        </tr>
-        <tr>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <th>总价</th>
-          <th><div>{{totalPrice(order.books)}}</div></th>
-        </tr>
-      </tbody>
-    </table>
+    <el-table :data="tableData.filter(data=>isAdmin?(!search || data.userid.toString().includes(search)):data)"  stripe>
+      <el-table-column>
+        <template slot="header" scope="scope" >
+          <el-input v-model="search" style="width: 300px" v-if="isAdmin"
+                    placeholder="请输入用户编号" prefix-icon="el-icon-search"/>
+          <el-date-picker v-if="!isAdmin"
+            v-model="timeInterval" type="daterange" align="center"
+            unlink-panels range-separator="至" start-placeholder="开始日期"
+            end-placeholder="结束日期" :picker-options="pickerOptions" value-format="timestamp">
+          </el-date-picker>
+          <el-button @click="searchTimeFilter" v-if="!isAdmin"
+            type="primary" style="background-color: #589ef8" icon="el-icon-search">
+            搜索
+          </el-button>
+        </template>
+        <el-table-column type="expand" class="demo-table-expand">
+          <template slot-scope="props">
+            <el-table :data="props.row.detailEntities">
+              <el-table-column
+               prop="bookName"
+               label="图书名称"
+              >
+              </el-table-column>
+              <el-table-column
+               prop="bookAuthor"
+               label="作者"
+              >
+              </el-table-column>
+              <el-table-column
+               prop="bookPrice"
+               label="图书名称"
+              >
+              </el-table-column>
+              <el-table-column
+               prop="quantity"
+               label="图书数量"
+              >
+              </el-table-column>
+            </el-table>
+          </template>
+        </el-table-column>
+        <el-table-column
+          type="index"
+        >
+        </el-table-column>
+        <!--<el-table-column-->
+          <!--label="订单编号"-->
+          <!--prop="detailEntities.orderid"-->
+        <!--&gt;-->
+        <!--</el-table-column>-->
+        <el-table-column
+          v-if ="isAdmin"
+          label="用户编号"
+          prop="userid"
+        >
+        </el-table-column>
+        <el-table-column
+          label="日期"
+          prop="createTime"
+        >
+        </el-table-column>
+        <el-table-column
+          label="总价"
+          prop="totalPrice"
+        >
+        </el-table-column>
+      </el-table-column>
+    </el-table>
   </div>
 </template>
 
 <script>
+import store from '../store'
+
 export default {
   // 顾客和管理员分别加载不同的list
   name: 'OrderList',
   data: function () {
     return {
       search: '',
-      startTime: '2015-01-31',
-      endTime: new Date().toISOString().slice(0, 10),
-      orderList: [{
-        orderId: 1,
-        orderTime: '2019-1-31',
-        books: [{
-          bookCover: '董继堂和陈俊春光乍泄',
-          bookName: '物种起源',
-          bookAuthor: '周拂晓',
-          bookPrice: 44,
-          bookNum: 6
+      timeInterval: '',
+      // startTime: '2015-01-31',
+      // endTime: new Date().toISOString().slice(0, 10),
+      pickerOptions: {
+        shortcuts: [{
+          text: '最近一周',
+          onClick (picker) {
+            const end = new Date()
+            const start = new Date()
+            start.setTime(start.getTime() - 3600 * 1000 * 24 * 7)
+            picker.$emit('pick', [start, end])
+          }
         }, {
-          bookCover: '董继堂和陈俊再续前缘',
-          bookName: '生物本能',
-          bookAuthor: '周拂晓',
-          bookPrice: 44,
-          bookNum: 6
-        }, {
-          bookCover: '董继堂和陈俊最终幻想',
-          bookName: '不要脸',
-          bookAuthor: '周拂晓',
-          bookPrice: 44,
-          bookNum: 6
+          text: '最近一个月',
+          onClick (picker) {
+            const end = new Date()
+            const start = new Date()
+            start.setTime(start.getTime() - 3600 * 1000 * 24 * 30)
+            picker.$emit('pick', [start, end])
+          }
+        },
+        {
+          text: '最近一年',
+          onClick (picker) {
+            const end = new Date()
+            const start = new Date()
+            start.setTime(start.getTime() - 3600 * 1000 * 24 * 365)
+            picker.$emit('pick', [start, end])
+          }
         }]
-        // totalPrice: function () {
-        //   var total = 0
-        //   this.books.forEach(function (book) {
-        //     total += book.bookNum * book.bookPrice
-        //   })
-        //   return total
-        // }
-      }, {
-        orderId: 2,
-        orderTime: '2019-1-31',
-        books: [{
-          bookCover: '董继堂和陈俊春光乍泄',
-          bookName: '物种起源',
-          bookAuthor: '周拂晓',
-          bookPrice: 44,
-          bookNum: 10
-        }, {
-          bookCover: '董继堂和陈俊再续前缘',
-          bookName: '生物本能',
-          bookAuthor: '周拂晓',
-          bookPrice: 44,
-          bookNum: 1
-        }]
-        // totalPrice: function () {
-        //   var total = 0
-        //   this.books.forEach(function (book) {
-        //     total += book.bookNum * book.bookPrice
-        //   })
-        //   return total
-        // }
+      },
+      tableData: [{
+        totalPrice: 11.3,
+        userid: 1,
+        createTime: '2019-02-20 07:35:22.0',
+        detailEntities: [
+          {
+            id: 8,
+            orderid: 18,
+            bookName: 'code',
+            bookAuthor: 'dawnchau',
+            bookIsbn: '23-3344',
+            bookStock: 5,
+            bookPrice: 11.3,
+            quantity: 1
+          }
+        ]
       }]
     }
   },
+  mounted: function(){
+    this.searchOrder()
+  },
   methods: {
-    totalPrice: function (books) {
-      var total = 0
-      books.forEach(function (book) {
-        total += book.bookNum * book.bookPrice
+    searchTimeFilter(){
+      let times= this.timeInterval.toString().split(',')
+      let start=times[0]
+      let end=times[1]
+      $.ajax({
+        url: store.state.urlprefix + '/user/listordersbetween?start='+start+'&end=' +end,
+        headers:{'Authorization': store.state.token },
+        contentType: "application/json; charset=utf-8",
+        dataType: 'JSON',
+        async: false, // 请求是否异步，默认为异步
+        type: 'GET',
+      }).done((e)=>{
+        this.tableData=e.data
+        this.$message({
+          showClose: true,
+          message: e.msg,
+          type: 'success'
+        })
+
+      }).fail((e)=>{
+        this.$message({
+          showClose: true,
+          message: '获取订单失败，' + '意外事件，本次演示到此结束',
+          type: 'error'
+        })
       })
-      return total
+    },
+    searchOrder: function () {
+      let tempUrl
+      if(this.isAdmin){
+        tempUrl='/admin/listallorders'
+      }else {
+        tempUrl='/user/listorders?userId=' +store.state.user.id
+      }
+      $.ajax({
+        url: store.state.urlprefix + tempUrl ,
+        headers:{'Authorization': store.state.token },
+        contentType: "application/json; charset=utf-8",
+        dataType: 'JSON',
+        async: false, // 请求是否异步，默认为异步
+        type: 'GET',
+      }).done((e)=>{
+        this.tableData=e.data
+        this.$message({
+          showClose: true,
+          message: e.msg,
+          type: 'success'
+        })
+
+      }).fail((e)=>{
+        this.$message({
+          showClose: true,
+          message: '获取订单失败，' + '意外事件，本次演示到此结束',
+          type: 'error'
+        })
+      })
+    }
+  },
+  computed: {
+    isAdmin: function () {
+      return store.state.isAdmin
     }
   }
 }
