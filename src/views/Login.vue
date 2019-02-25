@@ -182,7 +182,7 @@ export default {
             url: store.state.urlprefix + '/user/info/' + tempname,
             headers:{'Authorization': store.state.token },
             contentType: "application/json; charset=utf-8",
-            async: false, // 请求是否异步，默认为异步
+            async: true, // 请求是否异步，默认为异步
             type: 'POST',
           }).done((e)=>{
 

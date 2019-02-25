@@ -5,7 +5,7 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    urlprefix: 'http://192.168.1.28:8080',
+    urlprefix: 'http://localhost:8080',
     tokenprefix: "Bearer ",
     user: {},
     isAdmin: '',
